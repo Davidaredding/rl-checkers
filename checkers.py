@@ -1,8 +1,8 @@
 #game
 from collections import namedtuple
+from dataclasses import dataclass
 from io import StringIO
 from typing import NamedTuple
-from attr import dataclass
 import numpy as np
 
 

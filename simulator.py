@@ -6,7 +6,7 @@ import checkers as g
 from time import sleep
    
 game = g.checkers()
-
+s = 0
 
 while True:
     redMoves = []
@@ -27,7 +27,7 @@ while True:
         game.move(rm)
    
     print(game)
-    sleep(.75)
+    sleep(s)
     greenMoves = []
     greenJumps = []
 
@@ -56,4 +56,4 @@ while True:
         game.move(gm)
         print(gm)
     print(game)
-    sleep(.75)
+    sleep(s)
