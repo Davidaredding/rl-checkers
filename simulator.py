@@ -1,59 +1,86 @@
-import os
+#lets see how many simulations we can complete 
+import sys
+import time
 import random
-
+from typing import Callable
+import concurrent.futures
+import multiprocess
 import numpy as np
-import checkers as g
-from time import sleep
-   
-game = g.checkers()
-s = 0
+from checkers import checkers as checkers_game
 
-while True:
-    redMoves = []
-    redPlayers = list(zip(*np.where(game.board&3&1 == 1)))
-    for p in redPlayers:
-        redMoves.extend(list(game._moves(p)))
-        redMoves.extend(list(game._jumps(p,allowBackJump=False)))
-    if(len(redMoves) == 0): break
+def simulate(startPlayer:int=1, allowBackjump:bool=False, requireJump=True, maxMoves = 200)->int:
+    '''
+        Returns the Winner
+    '''
+    game = checkers_game()
+    player = startPlayer
+    m = maxMoves
 
-    os.system('cls' if os.name=='nt' else 'clear')
-    print('red')
-    rm = random.choice(redMoves)
-    print(list(map(str,redMoves)))
-    game.move(rm)
-    print(rm)
-    while rm.subsequent != None and len(rm.subsequent) > 0:
-        rm = random.choice(rm.subsequent)
-        game.move(rm)
-   
-    print(game)
-    sleep(s)
-    greenMoves = []
-    greenJumps = []
+    moves_1 = []
+    moves_2 = []
 
-    greenPlayers = list(zip(*np.where(game.board&3&2 == 2)))
-    for p in greenPlayers:
-        greenMoves.extend(list(game._moves(p)))
-        greenJumps.extend(list(game._jumps(p,allowBackJump=False)))
+    while m >= 0:
+        moves = []
+        jumps = []
+        pieces = list(zip(*np.where(game.board&3&player == player)))
+        
+        for p in pieces:
+            moves.extend(list(game._moves(p)))
+            #jumps.extend(list(game._jumps(p,allowBackJump=allowBackjump)))
+            # if not requireJump:
+            #     moves.extend(jumps)
+        if len(moves) == 0: break
 
-    if(len(greenMoves) == 0 and len(greenJumps)==0): 
-        print(list(game._moves((5,0))))
-        break
+        rm:checkers_game.Movement = None
 
-    os.system('cls' if os.name=='nt' else 'clear')
-    print('green')
-    print(list(map(str,greenMoves)))
-    
-    if len(greenJumps) > 0:
-        gm = random.choice(greenJumps)
-    else:
-        gm = random.choice(greenMoves)
- 
-    game.move(gm)
-    print(gm)
-    while gm.subsequent != None and len(gm.subsequent) > 0:
-        gm = random.choice(gm.subsequent)
-        game.move(gm)
-        print(gm)
-    print(game)
-    sleep(s)
+        if requireJump and len(jumps) > 0:
+            rm = random.choice(jumps) 
+        else:
+            rm = random.choice(moves)
+        
+        rm = game.move(rm)
+        if player == 1: moves_1.append(rm)
+        if player == 2: moves_2.append(rm)
+
+        while rm.subsequent != None and len(rm.subsequent) > 0:
+            rm = random.choice(rm.subsequent)
+            game.move(rm)
+            if player == 1: moves_1.append(rm)
+            if player == 2: moves_2.append(rm)
+
+
+        player = 3^(player&3)
+        m -= 1
+        
+    return 0 if moves==0 else 3^(player&3),moves_1, moves_2
+
+def __runsim(i):
+    s = time.time()
+    winner, moves1, moves2 = simulate()
+    e = time.time()        
+    # if callback : callback(i, (e-s),winner,moves1,moves2)
+    return (i,winner,moves1,moves2)
+
+def runSimulations(count:int=1, callback:Callable[[int,int,list,list],None] = None):
+
+    start = time.time()
+    # with concurrent.futures.ProcessPoolExecutor() as executor:
+    #    executor.map(__runsim,range(count))
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    #     results = executor.map(__runsim,range(count))
+
+    for i in range(count):
+        s = time.time()
+        winner, moves1, moves2 = simulate()
+        e = time.time()        
+        if callback : callback(i, (e-s),winner,moves1,moves2)
+
+    end = time.time()
+    #return (end-start), winners
+
+if __name__ == "__main__":
+    start =time.time()
+    sys.setrecursionlimit(10**9)
+    runSimulations(1000)
+    end = time.time()
+    print(end-start)

@@ -78,7 +78,8 @@ class checkers:
         return jumps
          
     def _moves(self,position) -> list:
-        if type(position) == type('str'): position = self._strToPos(position)
+        if isinstance(position, str):
+            position = self._strToPos(position)
         row, col = position
         if (player:= self.board[position]) == 0:  return []
         directions = []
@@ -86,8 +87,12 @@ class checkers:
         elif player&2==2: directions = [(-1,-1),(-1,1)]
         elif player&1==1: directions = [(1,-1),(1,1)]
 
+        retval =[]
         for dr,dc in directions:
-           if self.__valid((row+dr,col+dc)) and self.board[row+dr,col+dc] == 0: yield self.Movement(position,(row+dr,col+dc))
+            new_position = (row + dr, col + dc)
+            if self.__valid(new_position) and self.board[new_position] == 0:
+                retval.append(self.Movement(position, new_position))
+        return retval
         
     def move(self,move:Movement):
         x1,y1 = move.start
