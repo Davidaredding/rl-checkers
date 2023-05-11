@@ -1,7 +1,8 @@
 #game
-from __future__ import annotations
 from collections import namedtuple
+from dataclasses import dataclass
 from io import StringIO
+from typing import NamedTuple
 import numpy as np
 
 
@@ -15,6 +16,25 @@ class checkers:
         self.board[6:8:2, 1:8:2] = 2
         self.board[5:8:2, 0:8:2] = 2
         self.winner = 0
+
+    @dataclass
+    class Movement:
+        start:NamedTuple("start",[('row',int), ('col',int)])
+        end:NamedTuple("end",[('row',int), ('col',int)])
+        jump:NamedTuple("jump",[('row',int), ('col',int)]) = None
+        subsequent: list = None
+        
+        def __toChar(self,position):
+            if position == None: return ""
+            retval = chr(ord('`')+position[0]+1), str(position[1])
+            return retval
+
+        def __str__(self):
+            val = ''.join(self.__toChar(self.start)) +'->'+''.join(self.__toChar(self.end))+('∩'+''.join(self.__toChar(self.jump)) if self.jump else '')
+            return val
+        
+        def __repr__(self):
+            return self.__str__()
         
     def _posToStr(self,position):
         if position == None: return ""
@@ -28,12 +48,6 @@ class checkers:
         if position == None: return False
         r,c = position
         return r >= 0 and r < self.height and c >= 0 and c < self.width
-
-    def adjacent(game, position) -> set:
-        row,col = position
-        retval = [] 
-        for dr,dc in [(1,-1),(1,1),(-1,-1),(-1,1)]:
-            if game._valid((row+dr,col+dc)): yield (row+dr,col+dc) 
 
     def _jumps(self,position, player = None, allowBackJump = True, exclude_from = (-1,-1)):
         if type(position) == type('str'): position = self._strToPos(position)
@@ -138,32 +152,3 @@ class checkers:
     
     def __repr__(self) -> str:
         return self.__str__()  
-
-Point = namedtuple("Point", "row col")
-class Mvt:
-    def __init__(self, start:Point, end:Point, jump:Point=None, subsequent:List[Mvt]=None):
-        self.start = Point(*start)
-        self.end = Point(*end)
-        self.jump = Point(*jump) if jump else None
-        self.subsequent = subsequent
-
-
-
-    def __toChar(self,position):
-        if position == None: return ""
-        retval = chr(ord('`')+position[0]+1), str(position[1])
-        return retval
-
-    def __str__(self):
-        val = ''.join(self.__toChar(self.start)) +'->'+''.join(self.__toChar(self.end))+('∩'+''.join(self.__toChar(self.jump)) if self.jump else '')
-        return val
-    
-    def __repr__(self):
-        return self.__str__()
-
-    def __eq__(self,other):
-        return hash(self) == hash(other)
-    
-    def __hash__(self):
-        # return hash((hash(self.start),hash(self.end),hash(self.jump),hash(self.subsequent)))
-        return hash((hash(self.start),hash(self.end)))
